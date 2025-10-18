@@ -31,7 +31,7 @@ async def get_users():
 
 #exercici 4. Actualitzar - Actualització completa
 @app.put("/api/usuaris/{id}", response_model = dict)
-async def delete_user(id: int, nom: str):
+async def update_user(id: int, nom: str):
     list_users[id] = nom #aqui reemplaza el valor de id
     dic = {}
     for i in range(len(list_users)):
