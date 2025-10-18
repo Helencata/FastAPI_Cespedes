@@ -1,5 +1,4 @@
 from fastapi import FastAPI
-
 app = FastAPI()
 
 list_users = ["Helen", "Carmen", "Cristian"]
@@ -31,9 +30,13 @@ async def get_users():
     return dic
 
 #exercici 4. Actualitzar - Actualització completa
-
-
-
+@app.put("/api/usuaris/{id}", response_model = dict)
+async def delete_user(id: int, nom: str):
+    list_users[id] = nom #aqui reemplaza el valor de id
+    dic = {}
+    for i in range(len(list_users)):
+        dic[i] = list_users[i]
+    return dic
 
 #exercici 6. Eliminar - Esborrar usuari
 @app.delete("/api/usuaris/{id}", response_model = dict)
