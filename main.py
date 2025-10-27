@@ -1,48 +1,48 @@
-from fastapi import FastAPI
+import os
+from fastapi import FastAPI, Depends
+from dotenv import load_dotenv
+from sqlmodel import create_engine, Session, SQLModel, select
+from .models.Product import Product, ProductRequest, ProductResponse
+
 app = FastAPI()
 
-list_users = ["Helen", "Carmen", "Cristian"]
+load_dotenv()
+DATABASE_URL = os.getenv("DATABASE_URL")
+engine = create_engine(DATABASE_URL) #crear objecte de conexio
 
-#exercici 1. Afegir usuari
-@app.post("/api/users/{id}", response_model = dict) #el {id} se pone para poder utilizar luego, no forma parte de endpoint/ruta y el response model lo tenemos que poner siempre
-async def add_user(id): #aqui le pasamos por parametro el id de arriba
-    list_users.append(id) #aqui añadimos un neuvo id a la lista
-    dic = {} #creamos un diccionario vacio
-    for i in range(len(list_users)): #bucle para recorrer cada elemento de la lista
-        dic[i] = list_users[i] #crea una clave para cada elemeto de la lista
-    return dic #retorna en lista
+SQLModel.metadata.create_all(engine) #relacionar las taulas/ vincularlas
 
-#exercici 2. Llegir- Consultar un usuari
-@app.get("/api/users/{id}", response_model = dict)
-async def get_user(id: int):
-    dic = {}
-    for i in range(len(list_users)):
-        if i == id: #verificamos si el id pasado por parametro es igual que el de la lista
-            dic[i] = list_users[i]
-            return dic
+def get_db():
+    db= Session(engine)
+    try:
+        yield db #te permite utilizar esa base de dades en las consultas posteriores, en add, get, post... etc
+    finally:
+        db.close()
 
-#exercici 3. Llegir - Consultar tots els usuaris
-@app.get("/api/users", response_model = dict)
-async def get_users():
-    dic = {}
-    for i in range(len(list_users)):
-        dic[i] = list_users[i]
-    return dic
+@app.post("/product", response_model=dict, tags=["CREATE"])
+def addProduct(product: ProductRequest,db:Session= Depends(get_db)):#esto es para utilizar el yiels db y llamar la base de datos #userRequest: vincula la tabla UserRequest y tiene que tener todos los atributos. lo declara con la variable user
+    insert_product = Product.model_validate(product) #esto te cambie un json a sql user(json) User(sql)
+    db.add(insert_product) #
+    db.commit()#si no ponemos eso no funciona
+    return{"msg":"afegit usuari correctament"} #devuelve a json no a diccionari
 
-#exercici 4. Actualitzar - Actualització completa
-@app.put("/api/usuaris/{id}", response_model = dict)
-async def update_user(id: int, nom: str):
-    list_users[id] = nom #aqui reemplaza el valor de id
-    dic = {}
-    for i in range(len(list_users)):
-        dic[i] = list_users[i]
-    return dic
+@app.get("/product/{id}", response_model=ProductResponse, tags=["READ"])
+def getProduct(id:int, db:Session = Depends(get_db)):
+    stmt = select(Product).where(Product.id== id) #sqlalchemy
+    result = db.exec(stmt).first() #filtro para que te encuentre el primero, si no devuelve none first
+    print(result) #aqui te imprime tmb le passwd pero solo en la terminal
+    return ProductResponse.model_validate(result) #esto te devuelve los datos menos la contraseña
 
-#exercici 6. Eliminar - Esborrar usuari
-@app.delete("/api/usuaris/{id}", response_model = dict)
-async def delete_user(id: int):
-    list_users.pop(id) #esto borra el id pasado por parametro
-    dic = {}
-    for i in range(len(list_users)):
-        dic[i] = list_users[i]
-    return dic
+@app.get("/api/products", response_model=list[ProductResponse], tags=["READ"])
+def getProducts(db:Session = Depends(get_db)):
+    stmt = select(Product) #sqlalchemy
+    result = db.exec(stmt).all() #filtro para que te encuentre el primero, si no devuelve none first
+    print(result) #aqui te imprime tmb le passwd pero solo en la terminal
+    return result #esto te devuelve los datos menos la contraseña
+
+@app.get("/api/product_brand/{brand}", response_model=list[ProductResponse], tags=["READ"])
+def getOneProduct(brand: str, db:Session = Depends(get_db)):
+    stmt = select(Product).where(Product.brand == brand) #sqlalchemy
+    result = db.exec(stmt).all() #filtro para que te encuentre el primero, si no devuelve none first
+    print(result) #aqui te imprime tmb le passwd pero solo en la terminal
+    return result #esto te devuelve los datos menos la contraseña
