@@ -46,3 +46,10 @@ def getOneProduct(brand: str, db:Session = Depends(get_db)):
     result = db.exec(stmt).all() #filtro para que te encuentre el primero, si no devuelve none first
     print(result) #aqui te imprime tmb le passwd pero solo en la terminal
     return result #esto te devuelve los datos menos la contraseña
+
+@app.delete("/api/product/{id}", response_model=list[ProductResponse], tags=["DELETE"])
+def deleteProduct(id: int, db:Session = Depends(get_db)):
+    product = select(Product).where(Product.id == id)  # esto te cambie un json a sql user(json) User(sql)
+    db.delete(product)  #
+    db.commit()  # si no ponemos eso no funciona
+    return {"msg": "afegit usuari correctament"}  # devuelve a json no a diccionari
