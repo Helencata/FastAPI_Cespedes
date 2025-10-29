@@ -2,7 +2,7 @@ import os
 from fastapi import FastAPI, Depends
 from dotenv import load_dotenv
 from sqlmodel import create_engine, Session, SQLModel, select
-from .models.Product import Product, ProductRequest, ProductResponse
+from .models.Product import Product, ProductRequest, ProductResponse, ProductPartial
 
 app = FastAPI()
 
@@ -47,9 +47,35 @@ def getOneProduct(brand: str, db:Session = Depends(get_db)):
     print(result) #aqui te imprime tmb le passwd pero solo en la terminal
     return result #esto te devuelve los datos menos la contraseña
 
-@app.delete("/api/product/{id}", response_model=list[ProductResponse], tags=["DELETE"])
+@app.delete("/api/product/delete/{id}", response_model=dict, tags=["DELETE"])
 def deleteProduct(id: int, db:Session = Depends(get_db)):
-    product = select(Product).where(Product.id == id)  # esto te cambie un json a sql user(json) User(sql)
-    db.delete(product)  #
+    product = select(Product).where(Product.id == id)
+    result = db.exec(product).first()# esto te cambie un json a sql user(json) User(sql)
+    db.delete(result)  #
     db.commit()  # si no ponemos eso no funciona
-    return {"msg": "afegit usuari correctament"}  # devuelve a json no a diccionari
+    return {"msg": "usuari eliminat correctament"}  # devuelve a json no a diccionari
+
+@app.get("/api/product/partial/{id}", response_model=ProductPartial, tags=["READ"])
+def getProductParcial(id: int, db:Session = Depends(get_db)):
+    stmt = select(Product).where(Product.id == id) #sqlalchemy
+    result = db.exec(stmt).first() #filtro para que te encuentre el primero, si no devuelve none first
+    print(result) #aqui te imprime tmb le passwd pero solo en la terminal
+    return ProductPartial.model_validate(result)
+
+@app.put("/api/product/update/{id}", response_model=dict[ProductRequest], tags=["READ"])
+def getProductmodified(product: ProductRequest, db:Session = Depends(get_db)):
+    statement = select(Product).where(product.id == id)  # esto te cambie un json a sql user(json) User(sql)
+    result = db.exec(statement)
+    modificar = result.one
+
+    modificar.name = product.name
+    modificar.price = product.price
+    modificar.brand = product.brand
+    modificar.stock = product.stock
+    modificar.description = product.description
+
+    db.add(modificar)
+    db.commit()
+    db.refresh(modificar)
+
+    return{"msg":"modificat correctament"}
