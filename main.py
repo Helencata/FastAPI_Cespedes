@@ -24,7 +24,7 @@ def addProduct(product: ProductRequest,db:Session= Depends(get_db)):
     insert_product = Product.model_validate(product)
     db.add(insert_product)
     db.commit()
-    return{"msg":"afegit usuari correctament"} #
+    return{"msg":"afegit producte correctament"} #
 
 @app.get("/product/{id}", response_model=ProductResponse, tags=["READ ONE BY ID"])
 def getProduct(id:int, db:Session = Depends(get_db)):
@@ -53,7 +53,7 @@ def deleteProduct(id: int, db:Session = Depends(get_db)):
     result = db.exec(product).first()
     db.delete(result)
     db.commit()
-    return {"msg": "usuari eliminat correctament"}
+    return {"msg": "producte eliminat correctament"}
 
 @app.get("/api/product/partial/{id}", response_model=ProductPartial, tags=["READ PARTIAL"])
 def getProductParcial(id: int, db:Session = Depends(get_db)):
