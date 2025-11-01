@@ -2,8 +2,8 @@
 <img src="img/2.png" alt="activitat">
 <img src="img/3.png" alt="activitat">
 <img src="img/4.png" alt="activitat">
-<img src="img/5.png" alt="activitat">
 <img src="img/6.png" alt="activitat">
+<img src="img/5.png" alt="activitat">
 <img src="img/7.png" alt="activitat">
 <img src="img/8.png" alt="activitat">
 <img src="img/9.png" alt="activitat">
