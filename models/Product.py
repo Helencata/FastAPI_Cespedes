@@ -21,3 +21,14 @@ class ProductResponse(SQLModel):
     brand: str
     description: str
 
+class ProductPartial(SQLModel):
+    name: str
+    price: int
+    brand: str
+
+class ProductOne(SQLModel):
+    price: int
+
+class ProductTwo(SQLModel):
+    name: str
+    price: int

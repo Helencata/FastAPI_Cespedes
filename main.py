@@ -2,7 +2,7 @@ import os
 from fastapi import FastAPI, Depends
 from dotenv import load_dotenv
 from sqlmodel import create_engine, Session, SQLModel, select
-from .models.Product import Product, ProductRequest, ProductResponse, ProductPartial
+from .models.Product import Product, ProductRequest, ProductResponse, ProductPartial, ProductOne, ProductTwo
 
 app = FastAPI()
 
@@ -20,62 +20,83 @@ def get_db():
         db.close()
 
 @app.post("/product", response_model=dict, tags=["CREATE"])
-def addProduct(product: ProductRequest,db:Session= Depends(get_db)):#esto es para utilizar el yiels db y llamar la base de datos #userRequest: vincula la tabla UserRequest y tiene que tener todos los atributos. lo declara con la variable user
-    insert_product = Product.model_validate(product) #esto te cambie un json a sql user(json) User(sql)
-    db.add(insert_product) #
-    db.commit()#si no ponemos eso no funciona
-    return{"msg":"afegit usuari correctament"} #devuelve a json no a diccionari
+def addProduct(product: ProductRequest,db:Session= Depends(get_db)):
+    insert_product = Product.model_validate(product)
+    db.add(insert_product)
+    db.commit()
+    return{"msg":"afegit usuari correctament"} #
 
-@app.get("/product/{id}", response_model=ProductResponse, tags=["READ"])
+@app.get("/product/{id}", response_model=ProductResponse, tags=["READ ONE BY ID"])
 def getProduct(id:int, db:Session = Depends(get_db)):
-    stmt = select(Product).where(Product.id== id) #sqlalchemy
-    result = db.exec(stmt).first() #filtro para que te encuentre el primero, si no devuelve none first
-    print(result) #aqui te imprime tmb le passwd pero solo en la terminal
-    return ProductResponse.model_validate(result) #esto te devuelve los datos menos la contraseña
+    stmt = select(Product).where(Product.id== id)
+    result = db.exec(stmt).first()
+    print(result)
+    return ProductResponse.model_validate(result)
 
-@app.get("/api/products", response_model=list[ProductResponse], tags=["READ"])
+@app.get("/api/products", response_model=list[ProductResponse], tags=["READ ALL"])
 def getProducts(db:Session = Depends(get_db)):
-    stmt = select(Product) #sqlalchemy
-    result = db.exec(stmt).all() #filtro para que te encuentre el primero, si no devuelve none first
-    print(result) #aqui te imprime tmb le passwd pero solo en la terminal
-    return result #esto te devuelve los datos menos la contraseña
+    stmt = select(Product)
+    result = db.exec(stmt).all()
+    print(result)
+    return result
 
-@app.get("/api/product_brand/{brand}", response_model=list[ProductResponse], tags=["READ"])
+@app.get("/api/product_brand/{brand}", response_model=list[ProductResponse], tags=["READ ONE BY BRAND"])
 def getOneProduct(brand: str, db:Session = Depends(get_db)):
-    stmt = select(Product).where(Product.brand == brand) #sqlalchemy
-    result = db.exec(stmt).all() #filtro para que te encuentre el primero, si no devuelve none first
-    print(result) #aqui te imprime tmb le passwd pero solo en la terminal
-    return result #esto te devuelve los datos menos la contraseña
+    stmt = select(Product).where(Product.brand == brand)
+    result = db.exec(stmt).all()
+    print(result)
+    return result
 
-@app.delete("/api/product/delete/{id}", response_model=dict, tags=["DELETE"])
+@app.delete("/api/product/delete/{id}", response_model=dict, tags=["DELETE ONE"])
 def deleteProduct(id: int, db:Session = Depends(get_db)):
     product = select(Product).where(Product.id == id)
-    result = db.exec(product).first()# esto te cambie un json a sql user(json) User(sql)
-    db.delete(result)  #
-    db.commit()  # si no ponemos eso no funciona
-    return {"msg": "usuari eliminat correctament"}  # devuelve a json no a diccionari
+    result = db.exec(product).first()
+    db.delete(result)
+    db.commit()
+    return {"msg": "usuari eliminat correctament"}
 
-@app.get("/api/product/partial/{id}", response_model=ProductPartial, tags=["READ"])
+@app.get("/api/product/partial/{id}", response_model=ProductPartial, tags=["READ PARTIAL"])
 def getProductParcial(id: int, db:Session = Depends(get_db)):
     stmt = select(Product).where(Product.id == id) #sqlalchemy
-    result = db.exec(stmt).first() #filtro para que te encuentre el primero, si no devuelve none first
-    print(result) #aqui te imprime tmb le passwd pero solo en la terminal
-    return ProductPartial.model_validate(result)
+    result = db.exec(stmt).first()
+    return result
 
-@app.put("/api/product/update/{id}", response_model=dict[ProductRequest], tags=["READ"])
-def getProductmodified(product: ProductRequest, db:Session = Depends(get_db)):
-    statement = select(Product).where(product.id == id)  # esto te cambie un json a sql user(json) User(sql)
-    result = db.exec(statement)
-    modificar = result.one
 
-    modificar.name = product.name
-    modificar.price = product.price
-    modificar.brand = product.brand
-    modificar.stock = product.stock
-    modificar.description = product.description
+@app.patch("/api/product/update/{id}", response_model=dict, tags=["UPDATE ALL"])
+def update_product(id: int, product: ProductRequest, db: Session = Depends(get_db)):
+    product_db = db.get(Product, id)
 
-    db.add(modificar)
+    product_data = product.model_dump(exclude_unset=True)
+    product_db.sqlmodel_update(product_data)
+
+    db.add(product_db)
     db.commit()
-    db.refresh(modificar)
+    db.refresh(product_db)
 
     return{"msg":"modificat correctament"}
+
+@app.patch("/api/product/one/{id}", response_model=dict, tags=["UPDATE ONE"])
+def update_one(id: int, product: ProductOne, db: Session = Depends(get_db)):
+    product_db = db.get(Product, id)
+
+    product_db.price = product.price
+
+    db.add(product_db)
+    db.commit()
+    db.refresh(product_db)
+
+    return{"msg":"camp modificat correctament"}
+
+@app.patch("/api/product/two/{id}", response_model=dict, tags=["UPDATE TWO"])
+def update_one(id: int, product: ProductTwo, db: Session = Depends(get_db)):
+    product_db = db.get(Product, id)
+
+    product_db.price = product.price
+    product_db.name = product.name
+
+    db.add(product_db)
+    db.commit()
+    db.refresh(product_db)
+
+    return{"msg":"camps modificat correctament"}
+
