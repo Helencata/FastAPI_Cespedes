@@ -10,3 +10,6 @@
 <img src="img/10.png" alt="activitat">
 <img src="img/11.png" alt="activitat">
 <img src="img/12.png" alt="activitat">
+<img src="img/13.png" alt="activitat">
+<img src="img/14.png" alt="activitat">
+<img src="img/15.png" alt="activitat">
